@@ -405,6 +405,8 @@ app.on('ready', async () => {
       LOG_DIR: process.env.LOG_DIR,
       COLORIZE: process.env.COLORIZE ?? 'true',
       LOG_TO_FILE: process.env.LOG_TO_FILE ?? 'true',
+      QSS_ENABLED: process.env.QSS_ENABLED ?? 'false',
+      QSS_ENDPOINT: process.env.QSS_ENDPOINT ?? undefined,
     },
   })
   logger.info('Forked backend, PID:', backendProcess.pid)
