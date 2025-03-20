@@ -81,8 +81,8 @@ import { peerIdFromString } from '@libp2p/peer-id'
 import { PeerId } from '@libp2p/interface'
 import { privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { SigChainService } from '../auth/sigchain.service'
-import { Base58, InviteResult } from '3rd-party/auth/packages/auth/dist'
-import { UserService } from '../auth/services/members/user.service'
+import { Base58, InviteResult } from '@localfirst/auth'
+import { QSSService } from '../qss/qss.service'
 
 @Injectable()
 export class ConnectionsManagerService extends EventEmitter implements OnModuleInit {
@@ -105,7 +105,8 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
     private readonly localDbService: LocalDbService,
     private readonly storageService: StorageService,
     private readonly tor: Tor,
-    private readonly sigChainService: SigChainService
+    private readonly sigChainService: SigChainService,
+    private readonly qssService: QSSService
   ) {
     super()
   }
@@ -606,7 +607,12 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
       return community
     }
     this.logger.info(`Creating new LFA chain`)
-    await this.sigChainService.createChain(community.name, identity.nickname, true)
+    const sigchain = await this.sigChainService.createChain(community.name, identity.nickname, true)
+
+    const connected = await this.qssService.connect()
+    if (connected) {
+      await this.qssService.createCommunity(community, sigchain)
+    }
 
     await this.launchCommunity(community)
 

@@ -401,12 +401,12 @@ app.on('ready', async () => {
   backendProcess = fork(backendBundlePath, forkArgvs, {
     env: {
       NODE_OPTIONS: '--experimental-global-customevent',
-      DEBUG: process.env.DEBUG,
+      DEBUG: 'backend*:trace,quiet*,state-manager*,desktop*,utils*,identity*,common*,libp2p*',
       LOG_DIR: process.env.LOG_DIR,
       COLORIZE: process.env.COLORIZE ?? 'true',
       LOG_TO_FILE: process.env.LOG_TO_FILE ?? 'true',
       QSS_ENABLED: process.env.QSS_ENABLED ?? 'false',
-      QSS_ENDPOINT: process.env.QSS_ENDPOINT ?? undefined,
+      QSS_ENDPOINT: process.env.QSS_ENDPOINT,
     },
   })
   logger.info('Forked backend, PID:', backendProcess.pid)

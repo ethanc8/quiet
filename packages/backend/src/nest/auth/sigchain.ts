@@ -11,6 +11,7 @@ import { InviteService } from './services/invites/invite.service'
 import { CryptoService } from './services/crypto/crypto.service'
 import { RoleName } from './services/roles/roles'
 import { createLogger } from '../common/logger'
+import { ServerService } from './services/members/server.service'
 
 const logger = createLogger('auth:sigchain')
 
@@ -24,6 +25,7 @@ class SigChain {
   private _channels: ChannelService | null = null
   private _invites: InviteService | null = null
   private _crypto: CryptoService | null = null
+  private _server: ServerService | null = null
 
   private constructor(localUserContext: auth.LocalUserContext, team?: auth.Team) {
     this.localUserContext = localUserContext
@@ -111,6 +113,7 @@ class SigChain {
     this._channels = ChannelService.init(this)
     this._invites = InviteService.init(this)
     this._crypto = CryptoService.init(this)
+    this._server = ServerService.init(this)
   }
 
   public save(): Uint8Array {
@@ -142,6 +145,10 @@ class SigChain {
 
   get crypto(): CryptoService {
     return this._crypto!
+  }
+
+  get server(): ServerService {
+    return this._server!
   }
 
   static get lfa(): typeof auth {

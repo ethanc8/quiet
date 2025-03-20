@@ -8,6 +8,7 @@ import { ConnectionsManagerService } from './connections-manager.service'
 import { StorageServiceClientModule } from '../storageServiceClient/storageServiceClient.module'
 import { Libp2pModule } from '../libp2p/libp2p.module'
 import { SigChainModule } from '../auth/sigchain.service.module'
+import { QSSModule } from '../qss/qss.module'
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SigChainModule } from '../auth/sigchain.service.module'
     LocalDbModule,
     StorageServiceClientModule,
     SigChainModule,
+    QSSModule,
   ],
   providers: [ConnectionsManagerService],
   exports: [ConnectionsManagerService],

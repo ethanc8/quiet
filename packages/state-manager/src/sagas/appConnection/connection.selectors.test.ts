@@ -11,7 +11,6 @@ import { composeInvitationShareUrl, createLibp2pAddress, p2pAddressesToPairs } f
 import { Base58 } from '3rd-party/auth/packages/crypto/dist'
 import { communitiesSelectors } from '../communities/communities.selectors'
 import { createLogger } from '../../utils/logger'
-import { InviteResult } from '@localfirst/auth'
 
 const logger = createLogger('connection.selectors.test')
 

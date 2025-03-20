@@ -25,7 +25,7 @@ import {
   type DeleteChannelResponse,
   type Identity,
 } from '@quiet/types'
-import { InviteResult } from '3rd-party/auth/packages/auth/dist'
+import { InviteResult } from '@localfirst/auth'
 
 interface EventsMap {
   [event: string]: (...args: any[]) => void
