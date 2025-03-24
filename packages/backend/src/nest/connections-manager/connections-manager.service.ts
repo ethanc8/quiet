@@ -244,7 +244,11 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
     if (community.name) {
       try {
         this.logger.info('Loading sigchain for community', community.name)
-        await this.sigChainService.loadChain(community.name, true)
+        const loadedSigchain = await this.sigChainService.loadChain(community.name, true)
+        const connected = await this.qssService.connect()
+        if (connected) {
+          await this.qssService.signInToCommunity(loadedSigchain.team!.id, loadedSigchain)
+        }
       } catch (e) {
         this.logger.warn('Failed to load sigchain', e)
       }
@@ -610,9 +614,16 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
     const sigchain = await this.sigChainService.createChain(community.name, identity.nickname, true)
 
     const connected = await this.qssService.connect()
+    let qssEnabled: boolean = false
     if (connected) {
-      await this.qssService.createCommunity(community, sigchain)
+      qssEnabled = await this.qssService.createCommunity(community, sigchain)
     }
+
+    await this.localDbService.setCommunity({
+      ...community,
+      teamId: sigchain.team!.id,
+      qssEnabled,
+    })
 
     await this.launchCommunity(community)
 
@@ -682,9 +693,28 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
 
     const inviteData = payload.inviteData
     let communityName: string | undefined
-    if (inviteData && inviteData?.version == InvitationDataVersion.v2) {
+    if (
+      inviteData &&
+      (inviteData?.version === InvitationDataVersion.v2 || inviteData?.version === InvitationDataVersion.v3)
+    ) {
       communityName = (payload.inviteData as InvitationDataV2).authData.communityName
-      this.sigChainService.createChainFromInvite(identity.nickname, communityName, inviteData.authData.seed, true)
+      const joiningSigchain = await this.sigChainService.createChainFromInvite(
+        identity.nickname,
+        communityName,
+        inviteData.authData.seed,
+        true
+      )
+
+      if (
+        inviteData.version === InvitationDataVersion.v3 &&
+        inviteData.qssEnabled &&
+        inviteData.authData.teamId != null
+      ) {
+        const connected = await this.qssService.connect()
+        if (connected) {
+          await this.qssService.signInToCommunity(inviteData.authData.teamId, joiningSigchain)
+        }
+      }
     }
 
     if (!metadata.peers || metadata.peers.length === 0) {

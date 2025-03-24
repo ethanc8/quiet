@@ -74,7 +74,27 @@ export const invitationUrl = createSelector(
       ownerOrbitDbIdentity,
       version: InvitationDataVersion.v1,
     }
-    if (currentCommunity != null && currentCommunity.name != null && longLivedInvite != null) {
+    const qssEnabled = currentCommunity.qssEnabled
+    const teamId = currentCommunity.teamId
+    if (
+      currentCommunity != null &&
+      currentCommunity.name != null &&
+      longLivedInvite != null &&
+      qssEnabled != null &&
+      teamId != null
+    ) {
+      inviteData = {
+        ...inviteData,
+        version: InvitationDataVersion.v3,
+        qssEnabled,
+        authData: {
+          communityName: currentCommunity.name,
+          seed: longLivedInvite.seed,
+          teamId,
+        },
+      }
+      logger.info('Added V3 invite data to the invite link')
+    } else if (currentCommunity != null && currentCommunity.name != null && longLivedInvite != null) {
       inviteData = {
         ...inviteData,
         version: InvitationDataVersion.v2,
@@ -86,7 +106,7 @@ export const invitationUrl = createSelector(
       logger.info('Added V2 invite data to the invite link')
     } else {
       logger.warn(
-        `Community and/or LFA invite data is missing, can't create V2 invite link! \nCommunity non-null? ${currentCommunity != null} \nCommunity name non-null? ${currentCommunity?.name != null} \nLFA invite data non-null? ${longLivedInvite != null}`
+        `Community and/or LFA invite data is missing, can't create V2/V3 invite link! \nCommunity non-null? ${currentCommunity != null} \nCommunity name non-null? ${currentCommunity?.name != null} \nLFA invite data non-null? ${longLivedInvite != null}`
       )
     }
     return composeInvitationShareUrl(inviteData)

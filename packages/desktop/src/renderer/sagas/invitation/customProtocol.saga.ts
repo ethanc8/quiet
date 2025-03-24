@@ -81,11 +81,8 @@ export function* customProtocolSaga(
   let currentPsk: string | undefined = undefined
   switch (data.version) {
     case InvitationDataVersion.v1:
-      storedPsk = yield* select(communities.selectors.psk)
-      currentPsk = data.psk
-      isJoiningAnotherCommunity = Boolean(storedPsk && storedPsk !== currentPsk)
-      break
     case InvitationDataVersion.v2: // Question: should we also check if the sig chain team name is different or something?  is the psk enough?
+    case InvitationDataVersion.v3:
       storedPsk = yield* select(communities.selectors.psk)
       currentPsk = data.psk
       isJoiningAnotherCommunity = Boolean(storedPsk && storedPsk !== currentPsk)
