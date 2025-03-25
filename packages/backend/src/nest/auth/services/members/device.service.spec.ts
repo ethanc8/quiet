@@ -1,6 +1,6 @@
 import { SigChain } from '../../sigchain'
 import { createLogger } from '../../../common/logger'
-import { DeviceWithSecrets, LocalUserContext } from '3rd-party/auth/packages/auth/dist'
+import { DeviceWithSecrets } from '3rd-party/auth/packages/auth/dist'
 import { RoleName } from '..//roles/roles'
 import { DeviceService } from './device.service'
 
@@ -16,8 +16,8 @@ describe('invites', () => {
     expect(adminSigChain.context).toBeDefined()
     expect(adminSigChain.team!.teamName).toBe('test')
     expect(adminSigChain.localUserContext.user.userName).toBe('user')
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.ADMIN)).toBe(true)
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.MEMBER)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.ADMIN)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('sigchain should contain admin device', () => {
     adminSigChain.team!.hasDevice(adminSigChain.localUserContext.device.deviceId)

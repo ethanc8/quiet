@@ -18,8 +18,8 @@ describe('invites', () => {
     expect(adminSigChain.context).toBeDefined()
     expect(adminSigChain.team!.teamName).toBe('test')
     expect(adminSigChain.localUserContext.user.userName).toBe('user')
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.ADMIN)).toBe(true)
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.MEMBER)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.ADMIN)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('should get keys', () => {
     const keys = adminSigChain.users.getKeys()

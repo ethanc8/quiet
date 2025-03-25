@@ -6,7 +6,7 @@ import { SigChain } from '../../sigchain'
 import { ChainServiceBase } from '../chainServiceBase'
 import { Permissions } from './permissions'
 import { QuietRole, RoleName } from './roles'
-import { LocalUserContext, Member, PermissionsMap, Role } from '@localfirst/auth'
+import { Member, PermissionsMap, Role } from '../../../../../../../3rd-party/auth/packages/auth/dist'
 import { createLogger } from '../../../common/logger'
 import { QuietLogger } from '@quiet/logger'
 
@@ -65,17 +65,17 @@ class RoleService extends ChainServiceBase {
     this.sigChain.team!.removeRole(roleName)
   }
 
-  public getRole(roleName: string, context: LocalUserContext): QuietRole {
+  public getRole(roleName: string): QuietRole {
     const role = this.sigChain.team!.roles(roleName)
     if (!role) {
       throw new Error(`No role found with name ${roleName}`)
     }
 
-    return this.roleToQuietRole(role, context)
+    return this.roleToQuietRole(role)
   }
 
-  public getAllRoles(context: LocalUserContext, haveAccessOnly: boolean = false): QuietRole[] {
-    const allRoles = this.sigChain.team!.roles().map(role => this.roleToQuietRole(role, context))
+  public getAllRoles(haveAccessOnly: boolean = false): QuietRole[] {
+    const allRoles = this.sigChain.team!.roles().map(role => this.roleToQuietRole(role))
     if (haveAccessOnly) {
       return allRoles.filter((role: QuietRole) => role.hasRole === true)
     }
@@ -87,17 +87,17 @@ class RoleService extends ChainServiceBase {
     return this.sigChain.team!.memberHasRole(memberId, roleName)
   }
 
-  public amIMemberOfRole(context: LocalUserContext, roleName: string): boolean {
-    return this.memberHasRole(context.user.userId, roleName)
+  public amIMemberOfRole(roleName: string): boolean {
+    return this.memberHasRole(this.sigChain.localUserContext.user.userId, roleName)
   }
 
   public getMembersForRole(roleName: string): Member[] {
     return this.sigChain.team!.membersInRole(roleName)
   }
 
-  private roleToQuietRole(role: Role, context: LocalUserContext): QuietRole {
+  private roleToQuietRole(role: Role): QuietRole {
     const members = this.sigChain.roles.getMembersForRole(role.roleName)
-    const hasRole = this.sigChain.roles.amIMemberOfRole(context, role.roleName)
+    const hasRole = this.sigChain.roles.amIMemberOfRole(role.roleName)
     return {
       ...role,
       members,

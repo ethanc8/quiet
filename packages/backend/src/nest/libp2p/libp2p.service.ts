@@ -46,6 +46,7 @@ import { libp2pAuth, Libp2pAuth } from './libp2p.auth'
 import { SigChainService } from '../auth/sigchain.service'
 import { TimedQueue } from '../common/timed-queue'
 import { defaultLogger } from './libp2p.logger'
+import { QSSService } from '../qss/qss.service'
 
 const KEY_LENGTH = 32
 export const LIBP2P_PSK_METADATA = '/key/swarm/psk/1.0.0/\n/base16/\n'
@@ -67,7 +68,8 @@ export class Libp2pService extends EventEmitter {
     @Inject(SERVER_IO_PROVIDER) public readonly serverIoProvider: ServerIoProviderTypes,
     @Inject(SOCKS_PROXY_AGENT) public readonly socksProxyAgent: Agent,
     @Inject(LIBP2P_DB_PATH) public readonly datastorePath: string,
-    private sigchainService: SigChainService
+    private readonly sigchainService: SigChainService,
+    private readonly qssService: QSSService
   ) {
     super()
 
@@ -367,7 +369,7 @@ export class Libp2pService extends EventEmitter {
           faultTolerance: FaultTolerance.NO_FATAL,
         },
         services: {
-          auth: libp2pAuth(this.sigchainService, this),
+          auth: libp2pAuth(this.sigchainService, this.qssService, this),
           ping: ping({ timeout: 30_000 }),
           pubsub: gossipsub({
             // neccessary to run a single peer

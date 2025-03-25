@@ -38,6 +38,7 @@ import { ChannelsService } from './channels/channels.service'
 @Injectable()
 export class StorageService extends EventEmitter {
   private peerId: PeerId | null = null
+  private initialized: boolean = false
 
   private readonly logger = createLogger(StorageService.name)
 
@@ -67,6 +68,11 @@ export class StorageService extends EventEmitter {
   }
 
   public async init(peerId: PeerId) {
+    if (this.initialized === true) {
+      this.logger.warn(`${StorageService.name} already initialized, skipping duplicate event`)
+      return
+    }
+
     this.logger.info('Initializing storage')
     this.prepare()
     this.peerId = peerId
@@ -87,6 +93,7 @@ export class StorageService extends EventEmitter {
     await this.startSync()
 
     this.logger.info('Initialized storage')
+    this.initialized = true
   }
 
   private async startSync() {

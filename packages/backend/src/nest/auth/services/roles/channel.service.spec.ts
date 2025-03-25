@@ -18,8 +18,8 @@ describe('invites', () => {
     expect(adminSigChain.localUserContext).toBeDefined()
     expect(adminSigChain.team!.teamName).toBe('test')
     expect(adminSigChain.localUserContext.user.userName).toBe('user')
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.ADMIN)).toBe(true)
-    expect(adminSigChain.roles.amIMemberOfRole(adminSigChain.localUserContext, RoleName.MEMBER)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.ADMIN)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('should create a private channel', () => {
     const privateChannel = adminSigChain.channels.createPrivateChannel(
@@ -45,8 +45,8 @@ describe('invites', () => {
     expect(newMemberSigChain.localUserContext).toBeDefined()
     expect(newMemberSigChain.localUserContext.user.userName).toBe('user2')
     expect(newMemberSigChain.localUserContext.user.userId).not.toBe(adminSigChain.localUserContext.user.userId)
-    expect(newMemberSigChain.roles.amIMemberOfRole(newMemberSigChain.localUserContext, RoleName.MEMBER)).toBe(false)
-    expect(newMemberSigChain.roles.amIMemberOfRole(newMemberSigChain.localUserContext, RoleName.ADMIN)).toBe(false)
+    expect(newMemberSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(false)
+    expect(newMemberSigChain.roles.amIMemberOfRole(RoleName.ADMIN)).toBe(false)
     expect(
       adminSigChain.invites.admitMemberFromInvite(
         inviteProof,
@@ -55,7 +55,7 @@ describe('invites', () => {
         newMemberSigChain.localUserContext.user.keys
       )
     ).toBeDefined()
-    expect(adminSigChain.roles.amIMemberOfRole(newMemberSigChain.localUserContext, RoleName.MEMBER)).toBe(true)
+    expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('should add the new member to the private channel', () => {
     const privateChannel = adminSigChain.channels.getChannel(privateChannelName, adminSigChain.localUserContext)

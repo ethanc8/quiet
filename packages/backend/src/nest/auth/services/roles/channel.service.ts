@@ -47,12 +47,12 @@ class ChannelService extends ChainServiceBase {
   }
 
   public getChannel(channelName: string, context: LocalUserContext): Channel {
-    const role = this.sigChain.roles.getRole(ChannelService.getPrivateChannelRoleName(channelName), context)
+    const role = this.sigChain.roles.getRole(ChannelService.getPrivateChannelRoleName(channelName))
     return this.roleToChannel(role, channelName, context)
   }
 
   public getChannels(context: LocalUserContext, haveAccessOnly: boolean = false): Channel[] {
-    const allRoles = this.sigChain.roles.getAllRoles(context, haveAccessOnly)
+    const allRoles = this.sigChain.roles.getAllRoles(haveAccessOnly)
     const allChannels = allRoles
       .filter((role: QuietRole) => this.isRoleChannel(context, role.roleName))
       .map((role: QuietRole) =>
