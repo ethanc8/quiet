@@ -20,11 +20,12 @@ import {
   AUTH_DATA_KEY,
   PEER_ADDRESS_KEY,
   QSS_ENABLED_KEY,
+  QSS_ENDPOINT_KEY,
 } from './invitationLink.const'
 import { QUIET_JOIN_PAGE } from '../const'
 import { validInvitationDatav1, validInvitationDatav2, validInvitationDatav3 } from '../tests'
 import { createLibp2pAddress } from '../libp2p'
-import { encodeAuthData } from './invitationLink.validator'
+import { encodeAuthData, encodeQssEndpoint } from './invitationLink.validator'
 
 describe(`Invitation link helper ${InvitationDataVersion.v1}`, () => {
   const address = 'y7yczmugl2tekami7sbdz5pfaemvx7bahwthrdvcbzw5vex2crsr26qd'
@@ -373,6 +374,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
     [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
     [AUTH_DATA_KEY, encodeAuthData(data.authData)],
     [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+    [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
   ]
 
   it('retrieves invitation link from argv', () => {
@@ -414,6 +416,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, disabledData.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(disabledData.authData)],
       [QSS_ENABLED_KEY, `${disabledData.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     const url = new URL(QUIET_JOIN_PAGE)
     disabledParams.forEach(([key, value]) => url.searchParams.append(key, value))
@@ -439,7 +442,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
 
     const parsed = parseInvitationLinkDeepUrl(url.href)
     expect(parsed).toEqual({
-      version: InvitationDataVersion.v2,
+      version: InvitationDataVersion.v3,
       ...data,
     })
   })
@@ -452,6 +455,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, '()_*'],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -471,6 +475,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, ''],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -490,6 +495,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, 'foo'],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -501,6 +507,87 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
     }
   })
 
+  it('throws error if qssEndpoint is missing', () => {
+    const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
+    const invalidUrlParams = [
+      [PEER_ADDRESS_KEY, peerPairsToUrlParamString([data.pairs[0], data.pairs[1]])],
+      [PSK_PARAM_KEY, data.psk],
+      [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
+      [AUTH_DATA_KEY, encodeAuthData(data.authData)],
+      [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+    ]
+    invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
+
+    try {
+      const parsed = parseInvitationLinkDeepUrl(url.href)
+      expect(parsed).toBe(null)
+    } catch (e) {
+      expect(e.message).toBe(`Missing required key 'e' in invitation link`)
+    }
+  })
+
+  it('throws error if qssEndpoint is invalid', () => {
+    const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
+    const invalidUrlParams = [
+      [PEER_ADDRESS_KEY, peerPairsToUrlParamString([data.pairs[0], data.pairs[1]])],
+      [PSK_PARAM_KEY, data.psk],
+      [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
+      [AUTH_DATA_KEY, encodeAuthData(data.authData)],
+      [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint('foobar')],
+    ]
+    invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
+
+    try {
+      const parsed = parseInvitationLinkDeepUrl(url.href)
+      expect(parsed).toBe(null)
+    } catch (e) {
+      expect(e.message).toBe(`Invalid value 'foobar' for key 'e' in invitation link - Value was an invalid URL`)
+    }
+  })
+
+  it('throws error if qssEndpoint is missing port', () => {
+    const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
+    const invalidUrlParams = [
+      [PEER_ADDRESS_KEY, peerPairsToUrlParamString([data.pairs[0], data.pairs[1]])],
+      [PSK_PARAM_KEY, data.psk],
+      [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
+      [AUTH_DATA_KEY, encodeAuthData(data.authData)],
+      [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint('ws://localhost')],
+    ]
+    invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
+
+    try {
+      const parsed = parseInvitationLinkDeepUrl(url.href)
+      expect(parsed).toBe(null)
+    } catch (e) {
+      expect(e.message).toBe(`Invalid value 'ws://localhost' for key 'e' in invitation link - Port was null`)
+    }
+  })
+
+  it('throws error if qssEndpoint is not a ws/wss url', () => {
+    const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
+    const invalidUrlParams = [
+      [PEER_ADDRESS_KEY, peerPairsToUrlParamString([data.pairs[0], data.pairs[1]])],
+      [PSK_PARAM_KEY, data.psk],
+      [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
+      [AUTH_DATA_KEY, encodeAuthData(data.authData)],
+      [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint('http://localhost:3000')],
+    ]
+    invalidUrlParams.forEach(([key, value]) => url.searchParams.append(key, value))
+
+    try {
+      const parsed = parseInvitationLinkDeepUrl(url.href)
+      expect(parsed).toBe(null)
+    } catch (e) {
+      expect(e.message).toBe(
+        `Invalid value 'http://localhost:3000' for key 'e' in invitation link - Protocol must be 'ws:' or 'wss:'`
+      )
+    }
+  })
+
   it('throw error if peer address param is present but no valid addresses are found', () => {
     const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
     const urlParams = [
@@ -509,6 +596,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -528,6 +616,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -553,6 +642,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
         }),
       ],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -578,6 +668,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
         }),
       ],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -603,6 +694,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
         }),
       ],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -628,6 +720,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
         }),
       ],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
     urlParams.forEach(([key, value]) => url.searchParams.append(key, value))
 
@@ -672,6 +765,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
 
     const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)
@@ -693,6 +787,7 @@ describe(`Invitation link helper ${InvitationDataVersion.v3}`, () => {
       [OWNER_ORBIT_DB_IDENTITY_PARAM_KEY, data.ownerOrbitDbIdentity],
       [AUTH_DATA_KEY, encodeAuthData(data.authData)],
       [QSS_ENABLED_KEY, `${data.qssEnabled}`],
+      [QSS_ENDPOINT_KEY, encodeQssEndpoint(data.qssEndpoint)],
     ]
 
     const url = new URL(DEEP_URL_SCHEME_WITH_SEPARATOR)

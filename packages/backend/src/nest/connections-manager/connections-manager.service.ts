@@ -60,7 +60,7 @@ import {
   InvitationDataV2,
   PermissionsError,
 } from '@quiet/types'
-import { CONFIG_OPTIONS, QUIET_DIR, SERVER_IO_PROVIDER, SOCKS_PROXY_AGENT } from '../const'
+import { CONFIG_OPTIONS, QSS_ENABLED, QSS_ENDPOINT, QUIET_DIR, SERVER_IO_PROVIDER, SOCKS_PROXY_AGENT } from '../const'
 import { Libp2pService } from '../libp2p/libp2p.service'
 import { CreatedLibp2pPeerId, Libp2pEvents, Libp2pNodeParams, Libp2pPeerInfo } from '../libp2p/libp2p.types'
 import { LocalDbService } from '../local-db/local-db.service'
@@ -100,6 +100,8 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
     @Inject(CONFIG_OPTIONS) public configOptions: ConfigOptions,
     @Inject(QUIET_DIR) public readonly quietDir: string,
     @Inject(SOCKS_PROXY_AGENT) public readonly socksProxyAgent: Agent,
+    @Inject(QSS_ENABLED) private readonly qssEnabled: boolean,
+    @Inject(QSS_ENDPOINT) private readonly qssEndpoint: string | undefined,
     private readonly socketService: SocketService,
     private readonly registrationService: RegistrationService,
     public readonly libp2pService: Libp2pService,
@@ -247,7 +249,7 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
       try {
         this.logger.info('Loading sigchain for community', community.name)
         const loadedSigchain = await this.sigChainService.loadChain(community.name, true)
-        const connected = await this.qssService.connect()
+        const connected = await this.qssService.connect(!!community.qssEnabled, community.qssEndpoint)
         if (connected) {
           await this.qssService.signInToCommunity(loadedSigchain.team!.id, loadedSigchain)
         }
@@ -615,7 +617,7 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
     this.logger.info(`Creating new LFA chain`)
     const sigchain = await this.sigChainService.createChain(community.name, identity.nickname, true)
 
-    const connected = await this.qssService.connect()
+    const connected = await this.qssService.connect(this.qssEnabled, this.qssEndpoint)
     let qssEnabled: boolean = false
     if (connected) {
       qssEnabled = await this.qssService.createCommunity(community, sigchain)
@@ -625,6 +627,7 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
       ...community,
       teamId: sigchain.team!.id,
       qssEnabled,
+      qssEndpoint: this.qssEndpoint,
     })
 
     await this.launchCommunity(community)
@@ -710,9 +713,10 @@ export class ConnectionsManagerService extends EventEmitter implements OnModuleI
       if (
         inviteData.version === InvitationDataVersion.v3 &&
         inviteData.qssEnabled &&
-        inviteData.authData.teamId != null
+        inviteData.authData.teamId != null &&
+        inviteData.qssEndpoint != null
       ) {
-        const connected = await this.qssService.connect()
+        const connected = await this.qssService.connect(true, inviteData.qssEndpoint)
         if (connected) {
           await this.qssService.signInToCommunity(inviteData.authData.teamId, joiningSigchain)
         }

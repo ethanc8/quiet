@@ -4,11 +4,11 @@ import { RoleName } from './roles'
 import { UserService } from '../members/user.service'
 import { InviteService } from '../invites/invite.service'
 
-const logger = createLogger('auth:services:invite.spec')
+const logger = createLogger('auth:services:channel.spec')
 
 const privateChannelName = 'testChannel'
 
-describe('invites', () => {
+describe('channels', () => {
   let adminSigChain: SigChain
   let newMemberSigChain: SigChain
 
@@ -22,10 +22,7 @@ describe('invites', () => {
     expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('should create a private channel', () => {
-    const privateChannel = adminSigChain.channels.createPrivateChannel(
-      privateChannelName,
-      adminSigChain.localUserContext
-    )
+    const privateChannel = adminSigChain.channels.createPrivateChannel(privateChannelName)
     expect(privateChannel).toBeDefined()
   })
   it('admin should generate an invite seed and admit a new user from it', () => {
@@ -58,7 +55,7 @@ describe('invites', () => {
     expect(adminSigChain.roles.amIMemberOfRole(RoleName.MEMBER)).toBe(true)
   })
   it('should add the new member to the private channel', () => {
-    const privateChannel = adminSigChain.channels.getChannel(privateChannelName, adminSigChain.localUserContext)
+    const privateChannel = adminSigChain.channels.getChannel(privateChannelName)
     adminSigChain.channels.addMemberToPrivateChannel(
       newMemberSigChain.localUserContext.user.userId,
       privateChannel.channelName
@@ -66,31 +63,31 @@ describe('invites', () => {
     expect(
       adminSigChain.channels.memberInChannel(newMemberSigChain.localUserContext.user.userId, privateChannel.channelName)
     ).toBe(true)
+    expect(adminSigChain.channels.getChannels(true).length).toBe(1)
   })
   it('should remove the new member from the private channel', () => {
-    const privateChannel = adminSigChain.channels.getChannel(privateChannelName, adminSigChain.localUserContext)
+    const privateChannel = adminSigChain.channels.getChannel(privateChannelName)
     adminSigChain.channels.revokePrivateChannelMembership(
       newMemberSigChain.localUserContext.user.userId,
       privateChannel.channelName
     )
-    expect(adminSigChain.channels.getChannels(newMemberSigChain.localUserContext, true).length).toBe(0)
     expect(
       adminSigChain.channels.memberInChannel(newMemberSigChain.localUserContext.user.userId, privateChannel.channelName)
     ).toBe(false)
   })
   it('should delete channel', () => {
-    const privateChannel = adminSigChain.channels.getChannel(privateChannelName, adminSigChain.localUserContext)
+    const privateChannel = adminSigChain.channels.getChannel(privateChannelName)
     adminSigChain.channels.deletePrivateChannel(privateChannel.channelName)
-    expect(adminSigChain.channels.getChannels(adminSigChain.localUserContext).length).toBe(0)
+    expect(adminSigChain.channels.getChannels().length).toBe(0)
   })
   it('should create new channel and then leave it', () => {
-    const channel = adminSigChain.channels.createPrivateChannel(privateChannelName, adminSigChain.localUserContext)
+    const channel = adminSigChain.channels.createPrivateChannel(privateChannelName)
     expect(channel).toBeDefined()
-    adminSigChain.channels.leaveChannel(channel.channelName, adminSigChain.localUserContext)
+    adminSigChain.channels.leaveChannel(channel.channelName)
     expect(
       adminSigChain.channels.memberInChannel(adminSigChain.localUserContext.user.userId, channel.channelName)
     ).toBe(false)
-    expect(adminSigChain.channels.getChannels(adminSigChain.localUserContext).length).toBe(1)
-    expect(adminSigChain.channels.getChannels(adminSigChain.localUserContext, true).length).toBe(0)
+    expect(adminSigChain.channels.getChannels().length).toBe(1)
+    expect(adminSigChain.channels.getChannels(true).length).toBe(0)
   })
 })

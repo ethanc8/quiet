@@ -17,6 +17,7 @@ export interface Community {
   ownerOrbitDbIdentity?: string
   teamId?: string
   qssEnabled?: boolean
+  qssEndpoint?: string
 }
 
 export enum CommunityOwnership {
