@@ -15,9 +15,12 @@ import paperclipGray from '../../../../static/images/paperclipGray.svg'
 import paperclipBlack from '../../../../static/images/paperclipBlack.svg'
 import path from 'path'
 import { emojify, findMatchingEmojis, extractPartialEmojiCode, emojiShortcodes } from './utils/emojiCodes'
+import MentionDropdown from './MentionDropdown'
+import { extractPartialMentionCode, findMatchingMentions, mentionfy, MentionMapping } from './utils/mentionUtils'
 
 const PREFIX = 'ChannelInput'
 const MAX_EMOJI_SUGGESTIONS = 100
+const MAX_MENTION_SUGGESTIONS = 100
 
 const classes = {
   root: `${PREFIX}root`,
@@ -251,7 +254,18 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
   // State for emoji dropdown
   const [emojiSuggestions, setEmojiSuggestions] = React.useState<string[]>([])
   const [partialEmoji, setPartialEmoji] = React.useState<string | null>(null)
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(-1)
+  const [selectedEmojiSuggestionIndex, setSelectedEmojiSuggestionIndex] = React.useState(-1)
+
+  // State for mention dropdown
+  const [mentionSuggestions, setMentionSuggestions] = React.useState<string[]>([])
+  const [partialMention, setPartialMention] = React.useState<string | null>(null)
+  const [selectedMentionSuggestionIndex, setSelectedMentionSuggestionIndex] = React.useState(-1)
+
+  // FIXME: This is for testing only!
+  const mentionToNormalized: MentionMapping = {
+    '@alpha': '@@1@@',
+    '@beta': '@@2@@',
+  }
 
   // Ref for the textarea container to position the emoji dropdown
   const textareaContainerRef = useRef<HTMLDivElement>(null)
@@ -299,7 +313,7 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
           setEmojiSuggestions(matches)
           setPartialEmoji(partialCode.partial)
           // Reset selection to first item when suggestions change
-          setSelectedSuggestionIndex(0)
+          setSelectedEmojiSuggestionIndex(0)
         } else {
           // Clear suggestions if not typing an emoji code
           setEmojiSuggestions([])
@@ -324,6 +338,46 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
           }, 0)
         }
 
+        // Handle mentions
+        {
+          // Check for potential emoji shortcode to provide tab completion suggestions
+          const partialMention = extractPartialMentionCode(currentText, cursorPosition)
+          if (partialMention && partialMention.partial.length > 1) {
+            // At least ":x"
+            const matches = findMatchingMentions(partialMention.partial, MAX_MENTION_SUGGESTIONS, mentionToNormalized)
+            // Use matches as is - if no matches, don't show any fallbacks
+            setMentionSuggestions(matches)
+            setPartialMention(partialMention.partial)
+            // Reset selection to first item when suggestions change
+            setSelectedMentionSuggestionIndex(0)
+          } else {
+            // Clear suggestions if not typing an mention code
+            setMentionSuggestions([])
+            setPartialMention(null)
+          }
+
+          // Check for mention conversion at current cursor position
+          const resultM = mentionfy(currentText, mentionToNormalized, cursorPosition) as {
+            text: string
+            cursorOffset: number
+          }
+          const { text: newTextM, cursorOffset } = resultM
+
+          // If mention conversion occurred, update the text and fix cursor position
+          if (newTextM !== currentText) {
+            setMessage(newTextM)
+
+            // Set timeout to fix cursor position after React renders
+            setTimeout(() => {
+              if (e.target) {
+                const newPosition = cursorPosition + cursorOffset
+                e.target.selectionStart = newPosition
+                e.target.selectionEnd = newPosition
+              }
+            }, 0)
+          }
+        }
+
         // Update textarea height to fit content
         adjustTextAreaHeight(e.target)
       }
@@ -337,7 +391,8 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
   })
 
   // State to track emoji autocomplete dropdown position
-  const [dropdownPosition, setDropdownPosition] = React.useState({ top: 0, left: 0, width: 0 })
+  const [emojiDropdownPosition, setEmojiDropdownPosition] = React.useState({ top: 0, left: 0, width: 0 })
+  const [mentionDropdownPosition, setMentionDropdownPosition] = React.useState({ top: 0, left: 0, width: 0 })
 
   // Update dropdown position whenever suggestions change or textarea size changes
   React.useEffect(() => {
@@ -350,13 +405,29 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
       // Calculate the height of the dropdown (max 5 items)
       const dropdownHeight = Math.min(emojiSuggestions.length, 5) * 40 + 10 // approx. height per item + padding
 
-      setDropdownPosition({
+      setEmojiDropdownPosition({
         top: textareaRect.top - dropdownHeight - 10, // Position above the textarea with a 10px gap
         left: textareaRect.left,
         width: textareaRect.width,
       })
     }
-  }, [emojiSuggestions, message])
+
+    if (mentionSuggestions.length > 0 && textareaContainerRef.current && textAreaRef.current) {
+      const container = textareaContainerRef.current
+      const textarea = textAreaRef.current
+      const containerRect = container.getBoundingClientRect()
+      const textareaRect = textarea.getBoundingClientRect()
+
+      // Calculate the height of the dropdown (max 5 items)
+      const dropdownHeight = Math.min(mentionSuggestions.length, 5) * 40 + 10 // approx. height per item + padding
+
+      setMentionDropdownPosition({
+        top: textareaRect.top - dropdownHeight - 10, // Position above the textarea with a 10px gap
+        left: textareaRect.left,
+        width: textareaRect.width,
+      })
+    }
+  }, [emojiSuggestions, mentionSuggestions, message])
 
   const onKeyDownCb = useCallback(
     (e: React.KeyboardEvent) => {
@@ -368,12 +439,12 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
 
         if (e.nativeEvent.key === 'ArrowDown') {
           // Move selection down
-          setSelectedSuggestionIndex(prev => (prev < emojiSuggestions.length - 1 ? prev + 1 : 0))
+          setSelectedEmojiSuggestionIndex(prev => (prev < emojiSuggestions.length - 1 ? prev + 1 : 0))
         } else {
           // Move selection up
-          setSelectedSuggestionIndex(prev => (prev > 0 ? prev - 1 : emojiSuggestions.length - 1))
+          setSelectedEmojiSuggestionIndex(prev => (prev > 0 ? prev - 1 : emojiSuggestions.length - 1))
         }
-      } else if (e.nativeEvent.key === 'Tab' || (e.nativeEvent.key === 'Enter' && emojiSuggestions.length > 0)) {
+      } else if ((e.nativeEvent.key === 'Tab' || e.nativeEvent.key === 'Enter') && emojiSuggestions.length > 0) {
         // Handle Tab or Enter key (when emoji dropdown is visible) for emoji shortcodes
         e.preventDefault() // Prevent focus change or form submission
 
@@ -382,7 +453,7 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
 
         if (partial && emojiSuggestions.length > 0) {
           // Use the currently selected suggestion
-          const selectedSuggestion = emojiSuggestions[selectedSuggestionIndex]
+          const selectedSuggestion = emojiSuggestions[selectedEmojiSuggestionIndex]
 
           // Get the actual emoji character
           const emoji = emojiShortcodes[selectedSuggestion]
@@ -398,7 +469,61 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
           setMessage(newText)
           // Reset suggestions and selection index
           setEmojiSuggestions([])
-          setSelectedSuggestionIndex(0)
+          setSelectedEmojiSuggestionIndex(0)
+
+          // Set cursor position after the component re-renders
+          setTimeout(() => {
+            if (target) {
+              target.selectionStart = newCursorPos
+              target.selectionEnd = newCursorPos
+            }
+          }, 0)
+
+          // If the key was Enter, we're done - don't proceed to the Enter handling below
+          if (e.nativeEvent.key === 'Enter') {
+            return
+          }
+        }
+      } else if (
+        mentionSuggestions.length > 0 &&
+        (e.nativeEvent.key === 'ArrowUp' || e.nativeEvent.key === 'ArrowDown')
+      ) {
+        // Handle arrow navigation for mention suggestions
+        e.preventDefault()
+
+        if (e.nativeEvent.key === 'ArrowDown') {
+          // Move selection down
+          setSelectedMentionSuggestionIndex(prev => (prev < mentionSuggestions.length - 1 ? prev + 1 : 0))
+        } else {
+          // Move selection up
+          setSelectedMentionSuggestionIndex(prev => (prev > 0 ? prev - 1 : mentionSuggestions.length - 1))
+        }
+      } else if ((e.nativeEvent.key === 'Tab' || e.nativeEvent.key === 'Enter') && mentionSuggestions.length > 0) {
+        // Handle Tab or Enter key (when mention dropdown is visible) for mention shortcodes
+        e.preventDefault() // Prevent focus change or form submission
+
+        const cursorPos = target.selectionStart || 0
+        const partial = extractPartialMentionCode(target.value, cursorPos)
+
+        if (partial && mentionSuggestions.length > 0) {
+          // Use the currently selected suggestion
+          const selectedSuggestion = mentionSuggestions[selectedMentionSuggestionIndex]
+
+          // Get the actual mention character
+          const mention = mentionToNormalized[selectedSuggestion]
+
+          // Calculate the new text with mention inserted
+          const beforeText = target.value.substring(0, partial.startPos)
+          const afterText = target.value.substring(cursorPos)
+          const newText = beforeText + mention + afterText
+
+          // Calculate new cursor position
+          const newCursorPos = partial.startPos + mention.length
+
+          setMessage(newText)
+          // Reset suggestions and selection index
+          setMentionSuggestions([])
+          setSelectedMentionSuggestionIndex(0)
 
           // Set cursor position after the component re-renders
           setTimeout(() => {
@@ -425,6 +550,15 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
           setMessage('')
           // Reset any state needed for emoji handling
           setEmojiSuggestions([])
+
+          // On send, replace any remaining emoji shortcodes with actual emojis
+          const messageWithMentions = mentionfy(target.value, mentionToNormalized, { finalSend: true }) as string
+          onChange(messageWithMentions)
+          onKeyPress(messageWithMentions)
+          setMessage('')
+          // Reset any state needed for emoji handling
+          setMentionSuggestions([])
+
           target.style.height = ''
         } else {
           e.preventDefault()
@@ -444,7 +578,9 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
       infoClass,
       setInfoClass,
       emojiSuggestions,
-      selectedSuggestionIndex,
+      selectedEmojiSuggestionIndex,
+      mentionSuggestions,
+      selectedMentionSuggestionIndex,
     ]
   )
 
@@ -499,12 +635,12 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
                 {emojiSuggestions.length > 0 && (
                   <EmojiDropdown
                     suggestions={emojiSuggestions}
-                    selectedIndex={selectedSuggestionIndex}
-                    position={dropdownPosition}
+                    selectedIndex={selectedEmojiSuggestionIndex}
+                    position={emojiDropdownPosition}
                     onClickAway={() => {
                       setEmojiSuggestions([])
                       setPartialEmoji(null)
-                      setSelectedSuggestionIndex(-1)
+                      setSelectedEmojiSuggestionIndex(-1)
                     }}
                     onEmojiSelect={suggestion => {
                       // Apply this emoji when clicked
@@ -525,7 +661,50 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
 
                         setMessage(newText)
                         setEmojiSuggestions([])
-                        setSelectedSuggestionIndex(0)
+                        setSelectedEmojiSuggestionIndex(0)
+
+                        // Set cursor position after click
+                        setTimeout(() => {
+                          if (textAreaRef.current) {
+                            textAreaRef.current.selectionStart = newCursorPos
+                            textAreaRef.current.selectionEnd = newCursorPos
+                            textAreaRef.current.focus()
+                          }
+                        }, 0)
+                      }
+                    }}
+                  />
+                )}
+                {mentionSuggestions.length > 0 && (
+                  <MentionDropdown
+                    suggestions={mentionSuggestions}
+                    selectedIndex={selectedMentionSuggestionIndex}
+                    position={mentionDropdownPosition}
+                    onClickAway={() => {
+                      setMentionSuggestions([])
+                      setPartialMention(null)
+                      setSelectedMentionSuggestionIndex(-1)
+                    }}
+                    onMentionableSelect={suggestion => {
+                      // Apply this mention when clicked
+                      const cursorPos = textAreaRef.current?.selectionStart || 0
+                      const partial = extractPartialMentionCode(message, cursorPos)
+
+                      if (partial) {
+                        // Replace the partial mention with the actual mention
+                        const mention = suggestion
+
+                        // Calculate the new text with mention inserted
+                        const beforeText = message.substring(0, partial.startPos)
+                        const afterText = message.substring(cursorPos)
+                        const newText = beforeText + mention + afterText
+
+                        // Calculate new cursor position
+                        const newCursorPos = partial.startPos + mention.length
+
+                        setMessage(newText)
+                        setMentionSuggestions([])
+                        setSelectedMentionSuggestionIndex(0)
 
                         // Set cursor position after click
                         setTimeout(() => {
