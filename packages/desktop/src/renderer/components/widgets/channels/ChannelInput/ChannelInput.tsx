@@ -17,6 +17,10 @@ import path from 'path'
 import { emojify, findMatchingEmojis, extractPartialEmojiCode, emojiShortcodes } from './utils/emojiCodes'
 import MentionDropdown from './MentionDropdown'
 import { extractPartialMentionCode, findMatchingMentions, mentionfy, MentionMapping } from './utils/mentionUtils'
+import { Member } from '3rd-party/auth/packages/auth/dist'
+import { useSelector } from 'react-redux'
+
+import { User, users } from '@quiet/state-manager'
 
 const PREFIX = 'ChannelInput'
 const MAX_EMOJI_SUGGESTIONS = 100
@@ -261,11 +265,11 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
   const [partialMention, setPartialMention] = React.useState<string | null>(null)
   const [selectedMentionSuggestionIndex, setSelectedMentionSuggestionIndex] = React.useState(-1)
 
-  // FIXME: This is for testing only!
-  const mentionToNormalized: MentionMapping = {
-    '@alpha': '@@1@@',
-    '@beta': '@@2@@',
-  }
+  const allUsers: Record<string, User> = useSelector(users.selectors.allUsers)
+  const mentionToNormalized: MentionMapping = Object.fromEntries(
+    // TODO: Which part of a user uniquely identifies the user across all devices in the community?
+    Object.entries(allUsers).map(([key, value]) => ['@' + value.username, '@@' + key + '@@'])
+  )
 
   // Ref for the textarea container to position the emoji dropdown
   const textareaContainerRef = useRef<HTMLDivElement>(null)
