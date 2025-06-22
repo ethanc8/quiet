@@ -19,7 +19,7 @@ git submodule update --init --recursive --remote
 
 ```
 npm i lerna@6.6.2
-npm i typescript@4.9.3
+npm i typescript@4.9.5
 npm i -g pnpm@9.12.1 // may be needed depending on configuration
 npm install
 npm run bootstrap
@@ -47,11 +47,17 @@ To create a release run:
 npm run lerna version <release-type>
 ```
 
-To build a test version with Sentry, run:
+To build a prerelease version, run:
 
 ```
 npm run lerna version prerelease
 ```
+
+----
+
+## Updating Tor Binaries
+
+Quiet uses Tor binaries that are bundled in the `3rd-party/tor/` directory for desktop and `packages/mobile/android/app/src/main/jniLibs/arm64-v8a/libtor.so` for Android. Use `./scripts/update-tor-binaries-desktop.sh` to update them for all platforms, or use `--desktop-only` or `--android-only` flags to update specific platforms.
 
 ----
 

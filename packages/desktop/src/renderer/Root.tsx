@@ -10,7 +10,6 @@ import store from './store'
 import Index from './containers/windows/Index'
 import Main from './containers/windows/Main'
 import CreateUsername from './components/CreateUsername/CreateUsername'
-import SentryWarning from './containers/widgets/sentryWarning/sentryWarning'
 import SettingsModal from './components/Settings/Settings'
 import UpdateModal from './containers/widgets/update/UpdateModal'
 import QuitAppDialog from './containers/ui/QuitAppDialog'
@@ -35,7 +34,6 @@ import DuplicateModalContainer from './components/widgets/userLabel/duplicate/Du
 import UsernameTakenModalContainer from './components/widgets/usernameTakenModal/UsernameTakenModal.container'
 import PossibleImpersonationAttackModalContainer from './components/widgets/possibleImpersonationAttackModal/PossibleImpersonationAttackModal.container'
 import BreakingChangesWarning from './containers/widgets/breakingChangesWarning/BreakingChangesWarning'
-import { communities } from '@quiet/state-manager'
 // Trigger lerna
 
 export const persistor = persistStore(store)
@@ -48,7 +46,6 @@ export default () => {
           <HashRouter>
             <Provider store={store}>
               <PersistGate loading={null} persistor={persistor}>
-                <SentryWarning />
                 <WarningModal />
                 <UnregisteredModalContainer />
                 <DuplicateModalContainer />

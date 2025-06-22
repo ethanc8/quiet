@@ -4,7 +4,7 @@
   </h1>
 
   <h3 align="center">
-    Current release owner ✨<a href='https://github.com/adrastaea'>@adrastaea</a>✨ (September 2024)
+    Current release owner ✨<a href='https://github.com/adrastaea'>@holmesworcester</a>✨ (September 2024)
   </h3>
 
   <br />
@@ -45,15 +45,16 @@
 
 ## Checklist Before Alpha Release
 
-- [ ] Release branch is created from `develop` branch with the production version number, e.g. `2.1.0`.
-- [ ] Reviewed the base `CHANGELOG.md` file and ensured that it is up to date with all changes included in the release since the last production release. Package level `CHANGELOG.md` files are automatically updated during the release process.
-- [ ] Reviewed the [Quiet Planning Board](https://github.com/orgs/TryQuiet/projects/3) and ensured all issues contained in the release candidate are in the `Ready for QA` column.
+- [ ] Release branch is created from `develop` branch with the production version number, e.g. `2.1.0`. (Choose version number based on [semantic versioning](https://semver.org/) and our [last release](https://github.com/TryQuiet/quiet/releases).)
+- [ ] Review the base `CHANGELOG.md` file (Package level `CHANGELOG.md` files are automatically updated during the release process) and ensured that it is up to date with all changes included in the release since the last production release and update the version number.
+- [ ] Review the [Quiet Planning Board](https://github.com/orgs/TryQuiet/projects/3) and ensured all issues contained in the release candidate are in the `Ready for QA` column.
 
 ## Preparing a Release Candidate (Alpha)
 
 Alpha releases are pre-release versions of the release which are delivered to QA for testing. They are versioned with a pre-release version number, e.g. `2.1.0-alpha.0`.
 
 1. Generate a [Github Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#) and set it as `GH_TOKEN` environment variable (or include it in the command as shown below).
+1. Update Tor binaries: `./scripts/update-tor-binaries-desktop.sh` (updates both desktop and Android but not iOS. TODO: streamline updating Tor on iOS)
 1. Trigger a pre-release with `GH_TOKEN=<token> npm run publish --release=[prepatch|preminor|premajor|<EXACT_VERSION>]` (e.g. to create a prerelease of a minor update `npm run publish --release=preminor`) This will increment the versions of every package that has changed, create a release on the [Releases Page](https://github.com/TryQuiet/quiet/releases), and trigger Github Actions to deploy the alpha release to the Google Play Store and App Store.
 1. Manually update the release notes on the [Releases Page](https://github.com/TryQuiet/quiet/releases) with the changes included in the alpha release. See [RELEASE_NOTES_GUIDE.md](RELEASE_NOTES_GUIDE.md) for guidance on writing release notes.
 1. Promote the alpha release on the [Google Play Console](https://play.google.com/console/) to a closed testing track. Contact @holmesworcester if you need access to the organization.

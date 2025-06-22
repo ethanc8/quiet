@@ -154,7 +154,7 @@ const MessageProfilePhoto: React.FC<{ message: DisplayableMessage }> = ({ messag
   return message.photo ? (
     <img style={imgStyle} src={message.photo} alt={"Message author's profile image"} />
   ) : (
-    <Jdenticon value={message.pubKey} size='36' />
+    <Jdenticon value={message.userId} size='36' />
   )
 }
 
@@ -251,10 +251,7 @@ export const BasicMessageComponent: React.FC<BasicMessageProps & FileActionsProp
                           [classes.time]: true,
                         })}
                       >
-                        {DateTime.fromSeconds(messageDisplayData.createdAt).toLocaleString({
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
+                        {DateTime.fromSeconds(messageDisplayData.createdAt).toLocaleString(DateTime.TIME_SIMPLE)}
                       </Typography>
                     </Grid>
                   )}
