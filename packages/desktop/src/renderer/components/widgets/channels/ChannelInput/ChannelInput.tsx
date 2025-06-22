@@ -230,6 +230,7 @@ export interface ChannelInputProps {
   openFilesDialog: () => void
   handleClipboardFiles: (arg: ArrayBuffer, ext: string, name: string) => void
   handleOpenFiles: (arg: { files: any[] }) => void
+  allUsers?: Record<string, User>
 }
 
 export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
@@ -245,6 +246,11 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
   openFilesDialog,
   handleClipboardFiles,
   handleOpenFiles,
+  allUsers = {
+    alpha: {
+      username: 'alpha',
+    },
+  },
 }) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const fileInput = React.useRef<HTMLInputElement>(null)
@@ -265,7 +271,7 @@ export const ChannelInputComponent: React.FC<ChannelInputProps> = ({
   const [partialMention, setPartialMention] = React.useState<string | null>(null)
   const [selectedMentionSuggestionIndex, setSelectedMentionSuggestionIndex] = React.useState(-1)
 
-  const allUsers: Record<string, User> = useSelector(users.selectors.allUsers)
+  // const allUsers: Record<string, User> = useSelector(users.selectors.allUsers)
   const mentionToNormalized: MentionMapping = Object.fromEntries(
     // TODO: Which part of a user uniquely identifies the user across all devices in the community?
     Object.entries(allUsers).map(([key, value]) => ['@' + value.username, '@@' + key + '@@'])
